@@ -1,4 +1,4 @@
-#include <math.h>
+//#include <math.h>
 #include <inttypes.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -15,7 +15,8 @@
 #define DEVICE_INITIALIZED 0x600
 #define DEVICE_DISCOVERY_DONE 0x601
 #define DEVICE_INFORMATION 0x60D
-#define BAUD 115200
+#define BAUD 57600
+#define is_high(x,y) (x & _BV(y)) == _BV(y)
 #include <util/setbaud.h>
 
 static uint8_t gapCentralRoleTaskId = 0;
@@ -28,7 +29,7 @@ uint8_t buf[64];
 char szInfo[63];
 
 void publish(char* event, char* message) {
-	printf("%s: %s\n", event, message);
+	printf("%s: %s\r\n", event, message);
 }
 
 void uart_init(void) {
@@ -111,24 +112,43 @@ void ble_event_process() {
     uint16_t event;
     int i;
 
-    type = getchar();
+	_delay_ms(100);
+	printf("processing event\r\n");
+    while ((type = getchar()) > 0x7F) {
+	printf("rejected: %hX\r\n", type);
+	}
+	printf("type %hx\r\n", type);
     _delay_ms(100);
-    event_code = getchar();
-    data_len = getchar();
-  
-    for (i = 0; i < data_len; i++)
-        buf[i] = getchar();
+    while((event_code = getchar()) > 0x7F){
+	printf("rejected: %hX\r\n", event_code);
+	}
+	printf("event_code=%hx \r\n", event_code);
+	_delay_ms(100);  
+  while ((data_len = getchar()) > 0x7F){
+	printf("rejected: %hX\r\n", data_len);
+	}
+  	printf("data_len=%hX\r\n", data_len);
+    for (i = 0; i < data_len; i++) {
+_delay_ms(100);       
+	 while ((buf[i] = getchar()) > 0x7F){
+	printf("rejected: %hX\r\n", buf[i]);
+	}
+	printf("%hhX\r\n", buf[i]);
+    }
+	
     
     event = BUILD_UINT16(buf[0], buf[1]);
     status1 = buf[2];
   
     switch(event){
         case DEVICE_INITIALIZED:{
+	printf("device_initialized\r\n");
             hci_start_discovery();
             
             break;
         }
         case DEVICE_DISCOVERY_DONE:{
+		printf("device discovery done\r\n");
            hci_start_discovery();
       
             break;
@@ -147,10 +167,10 @@ void ble_event_process() {
             double distance = 0.0;
             double ratio = (256 - rssi) * 1.0 / (256 - txpower);
               
-            if(ratio < 1.0)
-                distance = pow(ratio, 10);
-            else
-                distance = (0.89976)*pow(ratio,7.7095) + 0.111;
+            //if(ratio < 1.0)
+            //    distance = pow(ratio, 10);
+            //else
+              //  distance = (0.89976)*pow(ratio,7.7095) + 0.111;
                 
             
             // Publish information, since we can only have 63 chars, let's do it in two step
@@ -188,6 +208,9 @@ void ble_event_process() {
             // digitalWrite(D7, LOW);
 
             break;
+	    default: {
+		printf("Default: %d\r\n", event);
+	    }
         }
     }
 }
@@ -196,29 +219,42 @@ void ble_event_process() {
 int main(void)
 {
 
-   /* Setup serial port */
-   uart_init();
-   stdout = &uart_output;
-   stdin  = &uart_input;
-   
-   hci_init(gapCentralRoleTaskId, GAP_PROFILE_CENTRAL, gapCentralRoleMaxScanRes, gapCentralRoleIRK, 		gapCentralRoleSRK, &gapCentralRoleSignCounter);
+   	/* Setup serial port */
+   	uart_init();
+   	stdout = &uart_output;
+   	stdin  = &uart_input;
 
-   char input;
+   	char input;
 
-   // Setup ports
-   DDRB |= (1<<1) | (1<<0);
-   PORTB |= (1<<0);
-   PORTB &= ~(1<<1);
+   	// Setup ports
+   	DDRB |= (1<<1) | (1<<0) | (1<<2);
+   	PORTB |= (1<<0);
+   	PORTB &= ~(1<<1);
+	PORTB = 0x01;
+	PORTD &= 0x7F;
 
-   /* Print hello and then echo serial
-   ** port data while blinking LED */
-   printf("Hello world!\r\n");
-   while(1) {
-      input = getchar();
-	  ble_event_process();
-      //printf("You wrote %c\r\n", input);
-      //PORTB ^= 0x01;
-   }
+    	DDRD = DDRD & 0x7F;
+
+	while(!(is_high(PIND, PD7))) {
+		PORTB = 0x04;
+		//printf("\nNo button press %lX\r\n", PD7);
+		_delay_ms(500);
+	}
+
+	hci_init(gapCentralRoleTaskId, GAP_PROFILE_CENTRAL, gapCentralRoleMaxScanRes, 		gapCentralRoleIRK, gapCentralRoleSRK, &gapCentralRoleSignCounter);
+
+	PORTB = 0x01;
+   	/* Print hello and then echo serial
+  	** port data while blinking LED */
+   	printf("Hello world!\r\n");
+   	while(1) {
+      		input = getchar();
+      		//  ble_event_process();
+      		printf("%hhX\r\n", input);
+		_delay_ms(100);
+//_delay_ms(1000);
+      		PORTB ^= 0x01;
+   	}
 
 }
 
