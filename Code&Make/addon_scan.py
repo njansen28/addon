@@ -48,8 +48,8 @@ class BeaconScanner:
         us_thread.start()
         ui_thread.start()
 
-	def set_search_uuid(self, uuid)
-		self.search_uuid = uuid
+    def set_search_uuid(self, uuid):
+        self.search_uuid = uuid
 		
     def get_search_uuid(self):
         return self.search_uuid
@@ -77,22 +77,22 @@ class BeaconScanner:
                             self.uuid_lock.acquire()
                             self.uuid_dict[uuid] = rssi
                             self.uuid_lock.release()
-							if uuid == get_search_uuid(self) :
-								print("UUID: {}, RSSI: {}".format(uuid, rssi))
-								if int(rssi) < -90:
-									print("No LEDs are on right now")
-								elif int(rssi) < -80:
-									print("First LED is on")
-								elif int(rssi) < -70:
-									print("Two are on")
-								elif int(rssi) < -60:
-									print("Three are on")	
-								elif int(rssi) < -50:
-									print("Four are on")
-								elif int(rssi) < -40:
-									print("Five are on")
-								else
-									print("BUZZZZZZZZ")
+                            if uuid == get_search_uuid(self) :
+                                print("UUID: {}, RSSI: {}".format(uuid, rssi))
+                            if int(rssi) < -90:
+                                print("No LEDs are on right now")
+                            elif int(rssi) < -80:
+                                print("First LED is on")
+                            elif int(rssi) < -70:
+                                print("Two are on")
+                            elif int(rssi) < -60:
+                                print("Three are on")	
+                            elif int(rssi) < -50:
+                                print("Four are on")
+                            elif int(rssi) < -40:
+                                print("Five are on")
+                            else:
+                                print("BUZZZZZZZZ")
                     # start tracking of new packet
                     cur_packet = line.strip()
                     continue
