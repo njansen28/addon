@@ -40,8 +40,8 @@ class BeaconScanner:
         GPIO.setup("P8_16", GPIO.OUT)
         GPIO.setup("P8_17", GPIO.OUT)
         GPIO.setup("P8_18", GPIO.OUT)
-        GPIO.setup("P8_19", GPIO.OUT)
-        GPIO.setup("P8_3", GPIO.IN)
+        GPIO.setup("P9_12", GPIO.OUT)
+        GPIO.setup("P8_26", GPIO.IN)
         
 
         # kill processes on exiting of program
@@ -73,13 +73,23 @@ class BeaconScanner:
         cur_packet = ""
         try:
             for line in iter(self.dump.stdout.readline, b''):
-                #print("suka")
+                if (GPIO.input("P8_26")) :
+                    GPIO.output("P8_13", GPIO.LOW) # current status is not searching
+                    self.set_search_uuid("")
+                    GPIO.output("P8_18", GPIO.LOW)
+                    GPIO.output("P8_17", GPIO.LOW)
+                    GPIO.output("P8_16", GPIO.LOW)
+                    GPIO.output("P8_15", GPIO.LOW)
+                    GPIO.output("P8_14", GPIO.LOW)
+                    GPIO.output("P9_12", GPIO.LOW)
+                #    print("P8_7: {}".format(GPIO.input("P8_26"))
+                #else:
+                #    print("P8_7: {}".format(GPIO.input("P8_26"))
                 # check if new packet as packet is split into multiple lines
                 if line[0] is ">":
                     # print(">>> " + cur_packet)
                     # check for ibeacon advertisement
                     # http://www.warski.org/blog/2014/01/how-ibeacons-work/
-                  #  print("blia")
                     send_param_header = "1E 02 01 06 1A FF 00 00 AB AB"
                     index = cur_packet.find(send_param_header)
                     if index != -1:
@@ -88,81 +98,87 @@ class BeaconScanner:
                         uuid_end = uuid_start + 47
                         # check if complete uuid is received
                         if uuid_end < len(cur_packet):
-                            search_uuid = cur_packet[uuid_start:uuid_end].replace(" ", "")
+                            self.set_search_uuid(cur_packet[uuid_start:uuid_end].replace(" ", ""))
                             # last byte of packet contains RSSI information
                             rssi = int(cur_packet[-2:], 16) - 256
-                            print("Searching for UUID: {}, RSSI: {}".format(search_uuid, rssi))
+                            GPIO.output("P8_13", GPIO.HIGH) #searching for item now
+                            print("Searching for UUID: {}, RSSI: {}".format(self.get_search_uuid(), rssi))
                     index = cur_packet.find(IBEACON_ID)
                     if index != -1:
-                      #  print("pizdyets")
                         uuid_start = index + len(IBEACON_ID) + 1
                         # 47 is the length of the UUID
                         uuid_end = uuid_start + 47
                         # check if complete uuid is received
                         if uuid_end < len(cur_packet):
-                       #     print("dabai")
                             uuid = cur_packet[uuid_start:uuid_end].replace(" ", "")
                             # last byte of packet contains RSSI information
                             rssi = int(cur_packet[-2:], 16) - 256
                             # lock for thread safety
                             #self.uuid_lock.acquire()
-                           # self.uuid_dict[uuid] = rssi
+                            # self.uuid_dict[uuid] = rssi
                             #self.uuid_lock.release()
                             if uuid == self.get_search_uuid() :
                                 print("UUID: {}, RSSI: {}".format(uuid, rssi))
                                 GPIO.output("P8_18", GPIO.HIGH)
                                # rssi = 0
+                                if int(rssi) < -90:
+                                    print("No LEDs are on right now")
+                                    GPIO.output("P8_18", GPIO.LOW)
+                                    GPIO.output("P8_17", GPIO.LOW)
+                                    GPIO.output("P8_16", GPIO.LOW)
+                                    GPIO.output("P8_15", GPIO.LOW)
+                                    GPIO.output("P8_14", GPIO.LOW)
+                                    GPIO.output("P9_12", GPIO.LOW)
+                                elif int(rssi) < -80:
+                                    print("First LED is on")
+                                    GPIO.output("P8_18", GPIO.HIGH)
+                                    GPIO.output("P8_17", GPIO.LOW)
+                                    GPIO.output("P8_16", GPIO.LOW)
+                                    GPIO.output("P8_15", GPIO.LOW)
+                                    GPIO.output("P8_14", GPIO.LOW)
+                                    GPIO.output("P9_12", GPIO.LOW)
+                                elif int(rssi) < -70:
+                                    print("Two are on")
+                                    GPIO.output("P8_18", GPIO.HIGH)
+                                    GPIO.output("P8_17", GPIO.HIGH)
+                                    GPIO.output("P8_16", GPIO.LOW)
+                                    GPIO.output("P8_15", GPIO.LOW)
+                                    GPIO.output("P8_14", GPIO.LOW)
+                                    GPIO.output("P9_12", GPIO.LOW)
+                                elif int(rssi) < -60:
+                                    print("Three are on")
+                                    GPIO.output("P8_18", GPIO.HIGH)
+                                    GPIO.output("P8_17", GPIO.HIGH)
+                                    GPIO.output("P8_16", GPIO.HIGH)
+                                    GPIO.output("P8_15", GPIO.LOW)
+                                    GPIO.output("P8_14", GPIO.LOW)
+                                    GPIO.output("P9_12", GPIO.LOW)
+                                elif int(rssi) < -50:
+                                    print("Four are on")
+                                    GPIO.output("P8_18", GPIO.HIGH)
+                                    GPIO.output("P8_17", GPIO.HIGH)
+                                    GPIO.output("P8_16", GPIO.HIGH)
+                                    GPIO.output("P8_15", GPIO.HIGH)
+                                    GPIO.output("P8_14", GPIO.LOW)
+                                    GPIO.output("P9_12", GPIO.LOW)
+                                elif int(rssi) < -40:
+                                    print("Five are on")
+                                    GPIO.output("P8_18", GPIO.HIGH)
+                                    GPIO.output("P8_17", GPIO.HIGH)
+                                    GPIO.output("P8_16", GPIO.HIGH)
+                                    GPIO.output("P8_15", GPIO.HIGH)
+                                    GPIO.output("P8_14", GPIO.HIGH)
+                                    GPIO.output("P9_12", GPIO.LOW)
+                                else:
+                                    print("BUZZZZZZZZ")
+                                    GPIO.output("P8_18", GPIO.HIGH)
+                                    GPIO.output("P8_17", GPIO.HIGH)
+                                    GPIO.output("P8_16", GPIO.HIGH)
+                                    GPIO.output("P8_15", GPIO.HIGH)
+                                    GPIO.output("P8_14", GPIO.HIGH)
+                                    GPIO.output("P9_12", GPIO.HIGH)
                             else :
-                                print("detectedUUID: {}, searchingForUUID: {}".format(uuid, get_search_uuid(self)))
-                            if int(rssi) < -90:
-                                print("No LEDs are on right now")
-                                GPIO.output("P8_13", GPIO.LOW)
-                                GPIO.output("P8_14", GPIO.LOW)
-                                GPIO.output("P8_15", GPIO.LOW)
-                                GPIO.output("P8_16", GPIO.LOW)
-                                GPIO.output("P8_17", GPIO.LOW)
-                            elif int(rssi) < -80:
-                                print("First LED is on")
-                                GPIO.output("P8_13", GPIO.HIGH)
-                                GPIO.output("P8_14", GPIO.LOW)
-                                GPIO.output("P8_15", GPIO.LOW)
-                                GPIO.output("P8_16", GPIO.LOW)
-                                GPIO.output("P8_17", GPIO.LOW)
-                            elif int(rssi) < -70:
-                                print("Two are on")
-                                GPIO.output("P8_13", GPIO.HIGH)
-                                GPIO.output("P8_14", GPIO.HIGH)
-                                GPIO.output("P8_15", GPIO.LOW)
-                                GPIO.output("P8_16", GPIO.LOW)
-                                GPIO.output("P8_17", GPIO.LOW)
-                            elif int(rssi) < -60:
-                                print("Three are on")
-                                GPIO.output("P8_13", GPIO.HIGH)
-                                GPIO.output("P8_14", GPIO.HIGH)
-                                GPIO.output("P8_15", GPIO.HIGH)
-                                GPIO.output("P8_16", GPIO.LOW)
-                                GPIO.output("P8_17", GPIO.LOW)
-                            elif int(rssi) < -50:
-                                print("Four are on")
-                                GPIO.output("P8_13", GPIO.HIGH)
-                                GPIO.output("P8_14", GPIO.HIGH)
-                                GPIO.output("P8_15", GPIO.HIGH)
-                                GPIO.output("P8_16", GPIO.HIGH)
-                                GPIO.output("P8_17", GPIO.LOW)
-                            elif int(rssi) < -40:
-                                print("Five are on")
-                                GPIO.output("P8_13", GPIO.HIGH)
-                                GPIO.output("P8_14", GPIO.HIGH)
-                                GPIO.output("P8_15", GPIO.HIGH)
-                                GPIO.output("P8_16", GPIO.HIGH)
-                                GPIO.output("P8_17", GPIO.HIGH)
-                            else:
-                                print("BUZZZZZZZZ")
-                                GPIO.output("P8_13", GPIO.HIGH)
-                                GPIO.output("P8_14", GPIO.HIGH)
-                                GPIO.output("P8_15", GPIO.HIGH)
-                                GPIO.output("P8_16", GPIO.HIGH)
-                                GPIO.output("P8_17", GPIO.HIGH)
+                                print("detectedUUID: {}, searchingForUUID: {}".format(uuid, self.get_search_uuid()))
                     # start tracking of new packet
                     cur_packet = line.strip()
                     continue
