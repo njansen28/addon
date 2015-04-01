@@ -1,0 +1,5 @@
+run_addon.sh: Script to run addon_scan on startup.
+Must put in /etc/init.d/
+Must have weird commented header thing
+then, run chmod 755 /etc/init/run_addon.sh
+Finally, run "update-rc.d run_addon.sh defaults", or "insserve run_addon.sh"
