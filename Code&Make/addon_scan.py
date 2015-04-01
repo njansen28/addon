@@ -71,6 +71,13 @@ class BeaconScanner:
 
     def receive_packets(self):
         cur_packet = ""
+        #rssi value will be average of last 3
+        #init to -70
+        rssi1 = -70
+        rssi2 = -70
+        rssi3 = -70
+        rssi4 = -70
+        rssi5 = -70
         try:
             for line in iter(self.dump.stdout.readline, b''):
                 if (GPIO.input("P8_26")) :
@@ -112,7 +119,12 @@ class BeaconScanner:
                         if uuid_end < len(cur_packet):
                             uuid = cur_packet[uuid_start:uuid_end].replace(" ", "")
                             # last byte of packet contains RSSI information
-                            rssi = int(cur_packet[-2:], 16) - 256
+                            rssi1 = rssi2
+                            rssi2 = rssi3
+                            rssi3 = rssi4
+                            rssi4 = rssi5
+                            rssi5 = int(cur_packet[-2:], 16) - 256
+                            rssi = (rssi1 + rssi2 + rssi3 +rssi4 + rssi5) / 5
                             # lock for thread safety
                             #self.uuid_lock.acquire()
                             # self.uuid_dict[uuid] = rssi
@@ -121,7 +133,7 @@ class BeaconScanner:
                                 print("UUID: {}, RSSI: {}".format(uuid, rssi))
                                 GPIO.output("P8_18", GPIO.HIGH)
                                # rssi = 0
-                                if int(rssi) < -90:
+                                if int(rssi) < -83:
                                     print("No LEDs are on right now")
                                     GPIO.output("P8_18", GPIO.LOW)
                                     GPIO.output("P8_17", GPIO.LOW)
@@ -129,7 +141,7 @@ class BeaconScanner:
                                     GPIO.output("P8_15", GPIO.LOW)
                                     GPIO.output("P8_14", GPIO.LOW)
                                     GPIO.output("P9_12", GPIO.LOW)
-                                elif int(rssi) < -80:
+                                elif int(rssi) < -77:
                                     print("First LED is on")
                                     GPIO.output("P8_18", GPIO.HIGH)
                                     GPIO.output("P8_17", GPIO.LOW)
@@ -137,7 +149,7 @@ class BeaconScanner:
                                     GPIO.output("P8_15", GPIO.LOW)
                                     GPIO.output("P8_14", GPIO.LOW)
                                     GPIO.output("P9_12", GPIO.LOW)
-                                elif int(rssi) < -70:
+                                elif int(rssi) < -72:
                                     print("Two are on")
                                     GPIO.output("P8_18", GPIO.HIGH)
                                     GPIO.output("P8_17", GPIO.HIGH)
@@ -145,7 +157,7 @@ class BeaconScanner:
                                     GPIO.output("P8_15", GPIO.LOW)
                                     GPIO.output("P8_14", GPIO.LOW)
                                     GPIO.output("P9_12", GPIO.LOW)
-                                elif int(rssi) < -60:
+                                elif int(rssi) < -68:
                                     print("Three are on")
                                     GPIO.output("P8_18", GPIO.HIGH)
                                     GPIO.output("P8_17", GPIO.HIGH)
@@ -153,7 +165,7 @@ class BeaconScanner:
                                     GPIO.output("P8_15", GPIO.LOW)
                                     GPIO.output("P8_14", GPIO.LOW)
                                     GPIO.output("P9_12", GPIO.LOW)
-                                elif int(rssi) < -50:
+                                elif int(rssi) < -65:
                                     print("Four are on")
                                     GPIO.output("P8_18", GPIO.HIGH)
                                     GPIO.output("P8_17", GPIO.HIGH)
@@ -161,7 +173,7 @@ class BeaconScanner:
                                     GPIO.output("P8_15", GPIO.HIGH)
                                     GPIO.output("P8_14", GPIO.LOW)
                                     GPIO.output("P9_12", GPIO.LOW)
-                                elif int(rssi) < -40:
+                                elif int(rssi) < -63:
                                     print("Five are on")
                                     GPIO.output("P8_18", GPIO.HIGH)
                                     GPIO.output("P8_17", GPIO.HIGH)
