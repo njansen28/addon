@@ -11,6 +11,8 @@ import Adafruit_BBIO.GPIO as GPIO
 
 from constants import *
 
+countdown = 5
+
 
 class BeaconScanner:
     def __init__(self):
@@ -19,7 +21,7 @@ class BeaconScanner:
         # password = getpass.getpass()
         # make sure hci0 is up
         #"sudo hciconfig hci0 down".split(" ")
-        #"sudo hciconfig hci0 up".split(" ")
+        "sudo hciconfig hci0 up".split(" ")
         scanargs = "sudo hcitool lescan --duplicates".split(" ")
         dumpargs = "sudo hcidump -x -R -i hci0".split(" ")
         devnull = open(os.devnull, 'wb')
@@ -55,14 +57,32 @@ class BeaconScanner:
         # start new threads to receive packets,
         # send packets, and update settings
         rp_thread = threading.Thread(target=self.receive_packets, args=())
-        #sp_thread = threading.Thread(target=self.send_packets, args=())
+        wd_thread = threading.Thread(target=self.watch_dog, args=())
         #us_thread = threading.Thread(target=self.update_settings, args=())
         #ui_thread = threading.Thread(target=self.update_id, args=())
         rp_thread.start()
-        #sp_thread.start()
+        wd_thread.start()
         #us_thread.start()
         #ui_thread.start()
 
+    def watch_dog(self):
+        global countdown
+       # print("running watchdog")
+        while(1) :
+            self.uuid_lock.acquire()
+            if (countdown != 0) :
+                countdown = countdown - 1
+            if (countdown == 0) :
+                GPIO.output("P8_18", GPIO.LOW)
+                GPIO.output("P8_17", GPIO.LOW)
+                GPIO.output("P8_16", GPIO.LOW)
+                GPIO.output("P8_15", GPIO.LOW)
+                GPIO.output("P8_14", GPIO.LOW)
+                GPIO.output("P9_12", GPIO.LOW)
+            self.uuid_lock.release()
+            print("countdown: {}".format(countdown))
+            time.sleep(0.1)
+        
     def set_search_uuid(self, uuid):
         self.search_uuid = uuid
 		
@@ -70,6 +90,7 @@ class BeaconScanner:
         return self.search_uuid
 
     def receive_packets(self):
+        global countdown
         cur_packet = ""
         #rssi value will be average of last 3
         #init to -70
@@ -125,11 +146,12 @@ class BeaconScanner:
                             rssi4 = rssi5
                             rssi5 = int(cur_packet[-2:], 16) - 256
                             rssi = (rssi1 + rssi2 + rssi3 +rssi4 + rssi5) / 5
-                            # lock for thread safety
-                            #self.uuid_lock.acquire()
-                            # self.uuid_dict[uuid] = rssi
-                            #self.uuid_lock.release()
                             if uuid == self.get_search_uuid() :
+                                # lock for thread safety
+                                self.uuid_lock.acquire()
+                                countdown = 5
+                                # self.uuid_dict[uuid] = rssi
+                                self.uuid_lock.release()
                                 print("UUID: {}, RSSI: {}".format(uuid, rssi))
                                 GPIO.output("P8_18", GPIO.HIGH)
                                # rssi = 0
