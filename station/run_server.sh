@@ -1,9 +1,9 @@
 #! /bin/sh
-# /etc/init.d/run_station.sh
+# /etc/init.d/run_server.sh
 #
 
 ### BEGIN INIT INFO
-# Provides: /root/station/beacon_scanner.py
+# Provides: /root/station/server.py
 # Required-Start: 
 # Required-Stop:  
 # Should-Start: 
@@ -16,11 +16,13 @@
 
 case "$1" in
     start)
-      python /root/station/beacon_scanner.py&
-      echo "Starting scanner"
+      hciconfig hci0 up
+      ifconfig wlan0 up
+      python /root/station/server.py&
+      echo "Starting server"
       ;;
     stop)
-      echo "Naaaaaaaaawwwwwww. not starting server/scanner"
+      echo "Naaaaaaaaawwwwwww. not starting server"
       ;;
     *)
       echo "Usage: /etc/init.d/foobar {start|stop}"
@@ -29,3 +31,4 @@ case "$1" in
 esac
 
 exit 0
+
