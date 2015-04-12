@@ -44,6 +44,7 @@ class BeaconScanner:
         GPIO.setup("P8_18", GPIO.OUT)
         GPIO.setup("P9_12", GPIO.OUT)
         GPIO.setup("P8_26", GPIO.IN)
+        GPIO.setup("P9_14", GPIO.IN)
         
 
         # kill processes on exiting of program
@@ -101,7 +102,27 @@ class BeaconScanner:
         rssi5 = -70
         try:
             for line in iter(self.dump.stdout.readline, b''):
-                if (GPIO.input("P8_26")) :
+                #Test Button
+                if (GPIO.input("P9_14") == GPIO.HIGH) :
+                    print("input is high")
+                    GPIO.output("P8_13", GPIO.HIGH)
+                    GPIO.output("P8_14", GPIO.HIGH)
+                    GPIO.output("P8_15", GPIO.HIGH)
+                    GPIO.output("P8_16", GPIO.HIGH)
+                    GPIO.output("P8_17", GPIO.HIGH)
+                    GPIO.output("P8_18", GPIO.HIGH)
+                    GPIO.output("P9_12", GPIO.HIGH)
+                #else :
+                 #   GPIO.output("P8_13", GPIO.HIGH)
+                  #  GPIO.output("P8_14", GPIO.HIGH)
+                   # GPIO.output("P8_15", GPIO.HIGH)
+                    #GPIO.output("P8_16", GPIO.HIGH)
+                    #GPIO.output("P8_17", GPIO.HIGH)
+                    #GPIO.output("P8_18", GPIO.HIGH)
+                    #GPIO.output("P9_12", GPIO.HIGH)
+                elif (self.get_search_uuid() == "") :
+                    GPIO.output("P8_13", GPIO.LOW)
+                if (GPIO.input("P8_26") == GPIO.HIGH) :
                     GPIO.output("P8_13", GPIO.LOW) # current status is not searching
                     self.set_search_uuid("")
                     GPIO.output("P8_18", GPIO.LOW)
