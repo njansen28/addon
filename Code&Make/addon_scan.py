@@ -160,14 +160,14 @@ class BeaconScanner:
                         # check if complete uuid is received
                         if uuid_end < len(cur_packet):
                             uuid = cur_packet[uuid_start:uuid_end].replace(" ", "")
-                            # last byte of packet contains RSSI information
-                            rssi1 = rssi2
-                            rssi2 = rssi3
-                            rssi3 = rssi4
-                            rssi4 = rssi5
-                            rssi5 = int(cur_packet[-2:], 16) - 256
-                            rssi = (rssi1 + rssi2 + rssi3 +rssi4 + rssi5) / 5
                             if uuid == self.get_search_uuid() :
+                                # last byte of packet contains RSSI information
+                                rssi1 = rssi2
+                                rssi2 = rssi3
+                                rssi3 = rssi4
+                                rssi4 = rssi5
+                                rssi5 = int(cur_packet[-2:], 16) - 256
+                                rssi = (rssi1 + rssi2 + rssi3 +rssi4 + rssi5) / 5
                                 # lock for thread safety
                                 self.uuid_lock.acquire()
                                 countdown = 5
